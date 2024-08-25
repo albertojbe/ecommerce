@@ -14,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 public class SaleResponse {
 
-    List<ProductQuantityValue> productQuantityValueList;
+    List<Purchased> purchasedList;
     private float totalValue;
     LocalDateTime saleDate;
 

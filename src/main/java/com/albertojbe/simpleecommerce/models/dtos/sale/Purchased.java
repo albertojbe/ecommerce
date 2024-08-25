@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProductQuantityValue{
+public class Purchased {
     private String nameProduct;
     private int quantity;
     private float value;

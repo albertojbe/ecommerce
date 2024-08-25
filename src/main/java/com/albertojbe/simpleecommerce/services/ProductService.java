@@ -50,4 +50,9 @@ public class ProductService {
         return productRepository.save(entity);
     }
 
+    public void updateProduct(Product product) {
+        product.setActive(product.enableActive());
+        productRepository.save(product);
+    }
+
 }

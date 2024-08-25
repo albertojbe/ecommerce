@@ -1,11 +1,10 @@
 package com.albertojbe.simpleecommerce.services;
 
-import com.albertojbe.simpleecommerce.exceptions.ResourceNotFoundException;
+import com.albertojbe.simpleecommerce.exceptions.NoProductsPurchased;
 import com.albertojbe.simpleecommerce.models.dtos.sale.ProductQuantity;
-import com.albertojbe.simpleecommerce.models.dtos.sale.ProductQuantityValue;
+import com.albertojbe.simpleecommerce.models.dtos.sale.Purchased;
 import com.albertojbe.simpleecommerce.models.dtos.sale.SaleRequest;
 import com.albertojbe.simpleecommerce.models.dtos.sale.SaleResponse;
-import com.albertojbe.simpleecommerce.repositories.ProductRepository;
 import com.albertojbe.simpleecommerce.repositories.SaleRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -18,33 +17,38 @@ import java.util.List;
 public class SaleService {
 
     SaleRepository saleRepository;
-    ProductRepository productRepository;
+    ProductService productService;
 
-    public SaleService(SaleRepository saleRepository, ProductRepository productRepository) {
+    public SaleService(SaleRepository saleRepository, ProductService productService) {
         this.saleRepository = saleRepository;
-        this.productRepository = productRepository;
+        this.productService = productService;
     }
 
+    @Transactional
     public SaleResponse buy(SaleRequest saleRequest) {
 
-        List<ProductQuantityValue> quantityValues = new ArrayList<>();
+        List<Purchased> purchasedList = new ArrayList<>();
         float totalValue = 0;
 
         for (ProductQuantity productQuantity : saleRequest.getProductQuantityList()) {
-            var product = productRepository.findById(productQuantity.getProductId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+            var product = productService.getProductById(productQuantity.getProductId());
             System.out.println(product);
-            ProductQuantityValue productQuantityValue = new ProductQuantityValue();
-            if (productQuantity.getQuantity() < product.getQuantity()) {
+            Purchased purchased = new Purchased();
+            if (productQuantity.getQuantity() <= product.getQuantity()) {
                 float value = productQuantity.getQuantity() * product.getPrice();
-                productQuantityValue.setQuantity(productQuantity.getQuantity());
-                productQuantityValue.setValue(value);
-                productQuantityValue.setNameProduct(product.getName());
-                quantityValues.add(productQuantityValue);
+                purchased.setNameProduct(product.getName());
+                purchased.setQuantity(productQuantity.getQuantity());
+                purchased.setValue(value);
+                purchasedList.add(purchased);
                 totalValue += value;
+                product.setQuantity(product.getQuantity() - productQuantity.getQuantity());
+                productService.updateProduct(product);
             }
         }
-        return new SaleResponse(quantityValues, totalValue, LocalDateTime.now());
+        if (!purchasedList.isEmpty()) {
+            return new SaleResponse(purchasedList, totalValue, LocalDateTime.now());
+        }
+        throw new NoProductsPurchased("No products purchased");
 
     }
 }

@@ -13,3 +13,7 @@ spring:
         format_sql: true
         show_sql: true
         dialect: org.hibernate.dialect.MySQL8Dialect
+
+security:
+  jwt:
+    secret-key: alberto
